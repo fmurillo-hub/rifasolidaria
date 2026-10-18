@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Sorteo Solidario</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+:root{--bg:#eef3ed;--surface:#fff;--ink:#14221a;--muted:#51635a;--line:#cbd8ca;--green:#276a3a;--green-ink:#fff;--heart:#bd322b;--heart-ink:#fff;--warn:#7a4f00;--warn-soft:#fcebc7;--ok-soft:#d8ead9;
+--f-ui:"Avenir Next","Segoe UI",system-ui,sans-serif;--f-num:ui-monospace,"SF Mono",Consolas,monospace}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0e1913;--surface:#16231c;--ink:#e7f0e9;--muted:#9db0a4;--line:#2b3f33;--green:#58b574;--green-ink:#07130b;--heart:#ef6a61;--heart-ink:#1a0705;--warn:#f0c15b;--warn-soft:#3a2d0c;--ok-soft:#1c3a28;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0e1913;--surface:#16231c;--ink:#e7f0e9;--muted:#9db0a4;--line:#2b3f33;--green:#58b574;--green-ink:#07130b;--heart:#ef6a61;--heart-ink:#1a0705;--warn:#f0c15b;--warn-soft:#3a2d0c;--ok-soft:#1c3a28;color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-ui);font-size:16px;line-height:1.5;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+.app{max-width:820px;margin:0 auto;display:flex;flex-direction:column;gap:14px}
+h1{margin:0;font-size:clamp(22px,5vw,32px)}
+.cause{color:var(--heart);font-weight:700;margin:0}
+button,textarea{font:inherit;color:inherit}
+textarea{width:100%;min-height:110px;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px}
+.btn{border:1px solid var(--line);background:var(--surface);border-radius:8px;padding:9px 14px;cursor:pointer;font-weight:700;min-height:40px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.heart{background:var(--heart);color:var(--heart-ink);border-color:var(--heart);font-size:20px;padding:14px 30px;min-height:56px}
+.btn.go{background:var(--green);color:var(--green-ink);border-color:var(--green)}
+.btn.sm{padding:4px 10px;min-height:32px;font-size:14px}
+:focus-visible{outline:3px solid #1d4e89;outline-offset:2px}
+.seg{display:flex;gap:6px}
+.seg .btn{flex:1}
+.seg .btn[aria-pressed=true]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.banner{border-radius:10px;padding:10px 14px;font-weight:800;letter-spacing:.04em;text-align:center}
+.banner.test{background:repeating-linear-gradient(135deg,var(--warn-soft) 0 14px,var(--surface) 14px 28px);color:var(--warn);border:2px solid var(--warn)}
+.banner.final{background:var(--ok-soft);color:var(--green);border:2px solid var(--green)}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.stage{align-items:center;text-align:center;padding:22px 12px}
+.prize{font-size:22px;font-weight:800}
+.big{font-family:var(--f-num);font-weight:800;font-size:clamp(72px,22vw,190px);letter-spacing:.06em;line-height:1;color:var(--heart);font-variant-numeric:tabular-nums}
+.big.empty{color:var(--line)}
+.muted{color:var(--muted)}.small{font-size:14px}
+.res{display:flex;gap:6px 14px;flex-wrap:wrap;align-items:baseline;padding:8px 0;border-bottom:1px solid var(--line)}
+.res b{font-family:var(--f-num);font-size:26px;color:var(--heart)}
+.note{border:1px solid var(--warn);background:var(--warn-soft);color:var(--warn);border-radius:10px;padding:10px 12px}
+.tabs{display:flex;gap:4px;border-bottom:2px solid var(--line)}
+.tab{border:0;background:transparent;padding:10px 14px;font-weight:700;cursor:pointer;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px}
+.tab[aria-selected=true]{color:var(--ink);border-bottom-color:var(--heart)}
+input[type=text]{width:100%;background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:8px 10px;font:inherit;color:inherit}
+.chips{display:grid;grid-template-columns:repeat(auto-fill,minmax(72px,1fr));gap:6px}
+.chip{font-family:var(--f-num);font-weight:700;text-align:center;border:1px solid var(--line);border-radius:8px;padding:6px 2px;background:var(--surface)}
+.chip.won{background:var(--heart);color:var(--heart-ink);border-color:var(--heart);text-decoration:line-through}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head><body>
+<div class="app">
+ <div><h1>Sorteo solidario</h1><p class="cause">Una Ayuda Desde El Corazón</p></div>
+ <div id="warn"></div>
+ <div class="seg" role="group" aria-label="Modo"><button class="btn" id="mTest" aria-pressed="true">Modo de prueba</button><button class="btn" id="mFinal" aria-pressed="false">Sorteo final</button></div>
+ <div id="banner"></div>
+ <div class="tabs" role="tablist"><button class="tab" id="tDraw" role="tab" aria-selected="true">Sorteo</button><button class="tab" id="tNums" role="tab" aria-selected="false">Números participantes</button></div>
+ <div id="viewDraw" style="display:flex;flex-direction:column;gap:14px">
+ <section class="card">
+  <label for="prizes"><b>Premios</b> <span class="muted small">(escribe uno por línea, en el orden en que se sortean)</span></label>
+  <textarea id="prizes" placeholder="Ej.:&#10;Premio 1&#10;Premio 2"></textarea>
+  <div class="row"><button class="btn go" id="savePrizes">Guardar premios</button><span class="muted small" id="prizeMsg"></span></div>
+ </section>
+ <section class="card stage" aria-live="polite">
+  <div class="prize" id="prizeNow"></div>
+  <div class="big empty" id="big">····</div>
+  <div id="info" class="muted"></div>
+  <button class="btn heart" id="draw">Sortear</button>
+  <div id="confirmBox" hidden class="note">Vas a iniciar el <b>sorteo final</b>. Los resultados quedan guardados y no se pueden repetir. <div class="row" style="margin-top:8px;justify-content:center"><button class="btn go" id="yes">Sí, iniciar sorteo final</button><button class="btn" id="no">Cancelar</button></div></div>
+ </section>
+ <section class="card"><b id="resTitle">Resultados</b><div id="results"></div><div class="row"><button class="btn sm" id="copy">Copiar resultados</button><button class="btn sm" id="reset">Reiniciar pruebas</button></div><div id="resetBox" hidden class="note">¿Seguro? <button class="btn sm" id="resetYes">Sí, reiniciar</button> <button class="btn sm" id="resetNo">Cancelar</button></div></section>
+ </div>
+ <div id="viewNums" hidden style="display:flex;flex-direction:column;gap:14px">
+  <section class="card"><b id="numsTitle"></b><div class="muted small" id="numsInfo"></div><input id="numQ" type="text" inputmode="numeric" placeholder="Buscar un número (ej. 0123)" aria-label="Buscar número"><div class="row"><label class="small"><input type="checkbox" id="onlyWon"> Mostrar solo los que ya ganaron</label></div><div class="chips" id="chips"></div></section>
+ </div>
+ <p class="muted small" id="foot"></p>
+</div>
+<script>
+(function(){
+'use strict';
+function R(a,b){var o=[];for(var i=a;i<=b;i++)o.push(String(i).padStart(4,'0'));return o;}
+function L(s){return s.split(/\s+/).filter(Boolean);}
+var CORRECTIONS={'0000':'3000'};
+
+var CAPTURES=[
+R(0,34),R(35,69),R(70,104),R(105,139),R(140,174),R(175,209),R(210,244),R(245,279),
+L('0281 0282 0283 0284 0285 0286 0287 0288 0289 0290 0292 0294 0296 0297 0298 0300 0301 0302 0303 0304 0306 0308 0309 0310 0311 0312 0313 0314 0316 0318 0319 0320 0321 0322 0325'),
+L('0328 0332 0333 0335 0336 0337 0338 0339 0340 0342 0343 0345 0346 0349 0350 0352 0354 0355 0356 0358 0361 0362 0363 0364 0365 0367 0368 0369 0370 0373 0375 0376 0377 0378 0381'),
+L('0383 0385 0386 0387 0391 0396 0397 0398 0400 0401 0402 0403 0404 0408 0409 0410 0411 0412 0413 0414 0417 0418 0419 0420 0421 0422 0424 0427 0429 0434 0436 0443 0444 0446 0447'),
+L('0450 0456 0459 0460 0465 0466 0467 0468 0469 0470 0471 0472 0473 0474 0475 0476 0479 0480 0487 0494 0497 0500 0501 0502 0504 0506 0509 0510 0511 0512 0513 0515 0518 0521 0530'),
+L('0534 0536 0537 0538 0542 0546 0549 0555 0565 0567 0571 0573 0576 0580 0582 0586 0590 0591 0595 0596 0598 0599 0600 0601 0602 0603 0604 0605 0606 0609 0612 0614 0621 0626 0630'),
+L('0636 0656 0658 0666 0677 0681 0686 0694 0696 0697 0698 0700 0702 0704 0705 0712 0717 0722 0725 0726 0731 0735 0738 0745 0755 0760 0767 0769 0770 0777 0781 0797 0800 0801 0807'),
+L('0808 0809 0819 0823 0827 0837 0853 0857 0864 0865 0870 0871 0872 0875 0876 0878 0879 0882 0886 0888 0897 0898 0900 0907 0911 0912 0917 0927 0937 0946 0947 0948 0954 0957 0967'),
+L('0970 0971 0972 0984 0985 0989 0998 0999 1000 1001 1002 1003 1004 1005 1006 1007 1008 1009 1010 1013 1014 1015 1016 1017 1018 1020 1025 1038 1043 1044 1045 1048 1049 1055 1070'),
+L('1071 1072 1082 1096 1098 1103 1111 1112 1113 1119 1123 1127 1128 1137 1141 1149 1152 1153 1156 1160 1176 1185 1186 1187 1188 1189 1190 1195 1196 1198 1199 1209 1211 1222 1227'),
+L('1230 1234 1279 1310 1314 1322 1324 1369 1370 1402 1412 1432 1442 1466 1502 1505 1524 1536 1555 1562 1583 1592 1633 1638 1640 1643 1649 1651 1678 1680 1686 1698 1701 1704 1705'),
+L('1708 1709 1717 1718 1738 1743 1746 1749 1752 1753 1757 1762 1767 1770 1773 1776 1777 1781 1784 1786 1791 1794 1797 1798 1800 1801 1809 1826 1852 1875 1885 1888 1889 1894 1899'),
+L('1910 1911 1922 1934 1936 1942 1947 1951 1952 1953 1956 1960 1963 1966 1972 1973 1974 1977 1979 1981 1982 1983 1984 1985 1987 1988 1989 1990 1991 1992 1993 1995 1996 1997 1998'),
+L('1999 2000 2004 2006 2008 2011 2012 2013 2014 2017 2019 2020 2021 2022 2023 2025 2026 2027 2028 2029 2040 2047 2049 2063 2065 2077 2088 2100 2102 2109 2110 2112 2113 2115 2117'),
+L('2118 2120 2122 2123 2125 2154 2157 2160 2186 2197 2207 2212 2219 2222 2232 2236 2242 2249 2252 2260 2262 2272 2274 2275 2282 2287 2297 2300 2301 2309 2332 2337 2345 2347 2348'),
+L('2403 2409 2427 2435 2437 2438 2440 2441 2443 2445 2446 2448 2450 2451 2453 2455 2460 2476 2477 2500 2504 2515 2535 2538 2545 2555 2557 2566 2573 2574 2577 2597 2608 2617 2661'),
+L('2678 2693 2700 2707 2711 2719 2722 2724 2727 2728 2730 2731 2732 2734 2736 2739 2741 2744 2745 2747 2761 2763 2777 2802 2822 2837 2850 2878 2880 2883 2885 2888 2889 2891 2894'),
+L('2896 2899 2901 2916 2917 2924 2939 2946 2956 2961 2969 2971 2974 2976 2977 2978 2979 2980 2982 2983 2986 2988 2989 2990 2991 2992 2994 2996 2997 2998 2999')
+];
+var CORR={'0000':'3000'},KEY='sorteo-solidario-simple-v1';
+var NUMS=[],seen={};
+CAPTURES.forEach(function(c){c.forEach(function(t){var n=CORR[t]||t;if(!seen[n]){seen[n]=1;NUMS.push(n);}});});
+NUMS.sort();
+var cr=window.crypto,cryptoOK=!!(cr&&typeof cr.getRandomValues==='function');
+function secureInt(max){var range=4294967296,limit=range-(range%max),b=new Uint32Array(1);for(;;){cr.getRandomValues(b);if(b[0]<limit)return b[0]%max;}}
+var S={mode:'test',prizes:[],test:[],final:[],started:false};
+var storeOK=false,busy=false;
+try{localStorage.setItem('__p','1');localStorage.removeItem('__p');storeOK=true;}catch(e){}
+if(storeOK){try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&Array.isArray(o.prizes)&&Array.isArray(o.test)&&Array.isArray(o.final)){S=o;S.mode='test';}}}catch(e){}}
+var saveFailed=false;
+function save(){if(!storeOK)return;try{localStorage.setItem(KEY,JSON.stringify(S));saveFailed=false;}catch(e){saveFailed=true;}}
+function $(i){return document.getElementById(i);}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function res(){return S.mode==='test'?S.test:S.final;}
+function eligible(){var w={};res().forEach(function(r){w[r.number]=1;});return NUMS.filter(function(n){return !w[n];});}
+function nextPrize(){return S.prizes[res().length]||null;}
+var tab='draw';
+function renderNums(){
+  var r=res(),won={};r.forEach(function(x){won[x.number]=x;});
+  var q=$('numQ').value.trim(),only=$('onlyWon').checked;
+  var list=NUMS.filter(function(n){return (!q||n.indexOf(q)>=0)&&(!only||won[n]);});
+  $('numsTitle').textContent='Números participantes'+(S.mode==='test'?' (modo de prueba)':' (sorteo final)');
+  $('numsInfo').textContent=NUMS.length+' números en total · '+(NUMS.length-r.length)+' participando · '+r.length+' ya ganaron y no vuelven a participar.';
+  $('chips').innerHTML=list.length?list.map(function(n){var w=won[n];return'<div class="chip'+(w?' won':'')+'"'+(w?' title="Ganó: '+esc(w.prize)+'"':'')+'>'+n+'</div>';}).join(''):'<span class="muted">Ningún número coincide.</span>';
+}
+function render(){
+  $('viewDraw').hidden=tab!=='draw';$('viewNums').hidden=tab!=='nums';
+  $('tDraw').setAttribute('aria-selected',tab==='draw');$('tNums').setAttribute('aria-selected',tab==='nums');
+  renderNums();
+  var m=S.mode,r=res(),np=nextPrize(),el=eligible();
+  $('mTest').setAttribute('aria-pressed',m==='test');$('mFinal').setAttribute('aria-pressed',m==='final');
+  $('banner').innerHTML=m==='test'?'<div class="banner test">MODO DE PRUEBA — RESULTADOS SIN VALIDEZ</div>':'<div class="banner final">SORTEO FINAL</div>';
+  var w='';if(!cryptoOK)w+='<div class="note">Este navegador no tiene Web Crypto: el sorteo está bloqueado.</div>';
+  if(!storeOK)w+='<div class="note" style="margin-top:6px">El guardado automático no está disponible: si cierras la página se pierden los resultados. Copia los resultados al terminar.</div>';
+  else if(saveFailed)w+='<div class="note" style="margin-top:6px">Falló el guardado: copia los resultados ahora.</div>';
+  $('warn').innerHTML=w;
+  $('prizeNow').textContent=np?'Premio '+(r.length+1)+' de '+S.prizes.length+': '+np:(S.prizes.length?'Todos los premios fueron sorteados':'Escribe los premios para empezar');
+  var last=r.length?r[r.length-1].number:null;
+  if(!busy){$('big').textContent=last||'····';$('big').className='big'+(last?'':' empty');}
+  $('info').textContent=el.length+' números participando'+(m==='test'?' (en la prueba)':'');
+  var dis=busy||!cryptoOK||!np||!el.length;$('draw').disabled=dis;$('draw').textContent=m==='test'?'Sortear (prueba)':'Sortear';
+  $('results').innerHTML=r.length?r.map(function(x,i){return'<div class="res"><b>'+esc(x.number)+'</b><span>'+(i+1)+'. '+esc(x.prize)+'</span></div>';}).join(''):'<p class="muted">Aún no hay resultados.</p>';
+  $('resTitle').textContent=m==='test'?'Resultados de prueba':'Resultados del sorteo final';
+  $('reset').hidden=m!=='test';$('resetBox').hidden=true;
+  $('savePrizes').disabled=busy||(m==='final'&&S.final.length>0);
+  $('prizeMsg').textContent=(S.final.length>0)?'Los premios no se pueden cambiar una vez iniciado el sorteo final.':'';
+  if(document.activeElement!==$('prizes'))$('prizes').value=S.prizes.join('\n');
+  $('foot').textContent='Cada número participante tiene la misma probabilidad. Un número que ya ganó no vuelve a participar. El ganador se elige con Web Crypto, no con la animación.';
+}
+function animate(num,list){return new Promise(function(done){
+  var el=$('big');el.className='big';
+  if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches){el.textContent=num;done();return;}
+  var k=0,i=0;(function t(){k++;if(k>22){el.textContent=num;done();return;}i=(i+11+k)%list.length;el.textContent=list[i];setTimeout(t,55+k*9);})();});}
+async function doDraw(){
+  if(busy)return;var np=nextPrize(),el=eligible();if(!cryptoOK||!np||!el.length)return;
+  busy=true;$('draw').disabled=true;
+  var idx=secureInt(el.length),number=el[idx];
+  res().push({prize:np,number:number,at:new Date().toISOString(),eligibleCount:el.length,index:idx});
+  if(S.mode==='final')S.started=true;
+  save();
+  await animate(number,el);
+  busy=false;render();
+}
+$('tDraw').addEventListener('click',function(){tab='draw';render();});
+$('tNums').addEventListener('click',function(){tab='nums';render();});
+$('numQ').addEventListener('input',renderNums);$('onlyWon').addEventListener('change',renderNums);
+$('draw').addEventListener('click',function(){
+  if(busy)return;
+  if(S.mode==='final'&&S.final.length===0){$('confirmBox').hidden=false;return;}
+  doDraw();
+});
+$('yes').addEventListener('click',function(){$('confirmBox').hidden=true;doDraw();});
+$('no').addEventListener('click',function(){$('confirmBox').hidden=true;});
+$('mTest').addEventListener('click',function(){if(busy)return;S.mode='test';$('confirmBox').hidden=true;render();});
+$('mFinal').addEventListener('click',function(){if(busy)return;S.mode='final';$('confirmBox').hidden=true;render();});
+$('savePrizes').addEventListener('click',function(){
+  var list=$('prizes').value.split(/\n/).map(function(s){return s.trim();}).filter(Boolean);
+  if(list.length>30){$('prizeMsg').textContent='Máximo 30 premios.';return;}
+  if(S.final.length>0||(S.test.length>list.length)){ if(S.test.length>list.length){S.test=S.test.slice(0,list.length);} }
+  S.prizes=list;save();render();$('prizeMsg').textContent='Guardado ('+list.length+' premios).';
+});
+$('reset').addEventListener('click',function(){$('resetBox').hidden=false;});
+$('resetNo').addEventListener('click',function(){$('resetBox').hidden=true;});
+$('resetYes').addEventListener('click',function(){S.test=[];save();render();});
+$('copy').addEventListener('click',function(){
+  var txt=(S.mode==='test'?'PRUEBA (sin validez)\n':'SORTEO FINAL\n')+res().map(function(x,i){return(i+1)+'. '+x.prize+': '+x.number;}).join('\n');
+  function fallback(){var ta=document.createElement('textarea');ta.value=txt;document.body.appendChild(ta);ta.select();try{document.execCommand('copy');}catch(e){}ta.remove();}
+  try{navigator.clipboard.writeText(txt).catch(fallback);}catch(e){fallback();}
+  $('copy').textContent='Copiado';setTimeout(function(){$('copy').textContent='Copiar resultados';},1800);
+});
+window.__s={NUMS:NUMS,S:function(){return S;},doDraw:doDraw,eligible:eligible};
+save();render();
+})();
+</script>
+</body></html>
